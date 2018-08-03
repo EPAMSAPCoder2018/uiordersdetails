@@ -1,0 +1,34 @@
+{
+    "application": {
+        "id": "",
+        "title": "com.epam.uiordersdetails",
+        "type": "SAP_UI5_Component",
+        "componentUrl": "/",
+        "appUrl": "#uiordersdetails-Display",
+        "navigationComponentName": "com.epam.uiordersdetails",
+        "intentSemanticObject": "uiordersdetails",
+        "intentAction": "Display",
+        "html5ApplicationName": "uiordersdetails",
+        "HCPParentApplicationName": ""
+    },
+    "assignment": {
+        "groups": [
+            "2cf4960d-15ff-456a-8db1-372dfe9d905e"
+        ],
+        "contentPackages": [
+            "8a24ace5-10d1-4e98-bdd9-a4cae1d5127e"
+        ],
+        "categories": []
+    },
+    "tile": {
+        "type": "StaticTile",
+        "title": "dgfdgd",
+        "subtitle": "Subtitle",
+        "searchKeywords": "dgfdgd,Subtitle",
+        "displayIconUrl": "sap-icon://approvals",
+        "displayInfoText": "",
+        "size": "1x1",
+        "serviceURL": "",
+        "refreshInterval": ""
+    }
+}

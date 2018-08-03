@@ -1,0 +1,49 @@
+{
+	"welcomeFile": "/webapp/index.html",
+	"routes": [{
+		"path": "/services/getOrders",
+		"target": {
+			"type": "destination",
+			"entryPath": "/services/getOrders.xsjs",
+			"name": "xs_api"
+		}
+	}, {
+		"path": "/services/getCarsByOrder",
+		"target": {
+			"type": "destination",
+			"entryPath": "/services/getCarsByOrder.xsjs",
+			"name": "xs_api"
+		}
+	}, {
+		"path": "/services/getStagesByOrder",
+		"target": {
+			"type": "destination",
+			"entryPath": "/services/getStagesByOrder.xsjs",
+			"name": "xs_api"
+		}
+	}, {
+		"path": "/services/getDevicesStatisticsByOrder",
+		"target": {
+			"type": "destination",
+			"entryPath": "/services/getDevicesStatisticsByOrder.xsjs",
+			"name": "xs_api"
+		}
+	}, {
+		"path": "/resources",
+		"target": {
+			"type": "service",
+			"name": "sapui5",
+			"entryPath": "/resources"
+		},
+		"description": "SAPUI5 Resources"
+	}, {
+		"path": "/test-resources",
+		"target": {
+			"type": "service",
+			"name": "sapui5",
+			"entryPath": "/test-resources"
+		},
+		"description": "SAPUI5 Test Resources"
+	}],
+	"sendWelcomeFileRedirect": true
+}
