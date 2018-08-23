@@ -8,10 +8,10 @@
 			"name": "xs_api"
 		}
 	}, {
-		"path": "/services/getCarsByOrder",
+		"path": "/services/getCarsCurrentPositions",
 		"target": {
 			"type": "destination",
-			"entryPath": "/services/getCarsByOrder.xsjs",
+			"entryPath": "/services/getCarsCurrentPositions.xsjs",
 			"name": "xs_api"
 		}
 	}, {
@@ -26,6 +26,13 @@
 		"target": {
 			"type": "destination",
 			"entryPath": "/services/getDevicesStatisticsByOrder.xsjs",
+			"name": "xs_api"
+		}
+	}, {
+		"path": "/services/getCustomersRequests",
+		"target": {
+			"type": "destination",
+			"entryPath": "/services/getCustomersRequests.xsjs",
 			"name": "xs_api"
 		}
 	}, {

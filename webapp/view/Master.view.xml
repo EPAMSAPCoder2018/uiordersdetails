@@ -7,7 +7,7 @@
 				<items>
 					<ObjectListItem title="{description}" type="{= ${device>/system/phone} ? 'Active' : 'Inactive'}" press="onSelect">
 						<firstStatus>
-							<ObjectStatus state="{= ${status}==='I' ? 'Warning' : (${status}==='D' ? 'Success' : 'None')}" text="{statusDescription}"/>
+							<ObjectStatus state="{state/state}" text="{state/description}"/>
 						</firstStatus>
 						<attributes>
 							<ObjectAttribute text="{id}"/>

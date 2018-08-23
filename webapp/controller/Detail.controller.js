@@ -12,7 +12,7 @@ sap.ui.define([
 			this.STATUSES_MAPPING = function () {
 				return {
 					GPS: {
-						color: "rgb(0,255,0)",
+						color: "rgb(0,255,215)",
 						state: null,
 						description: i18n.getProperty("detail.infoTab.stage.status.GPS")
 					},
@@ -46,6 +46,11 @@ sap.ui.define([
 						state: "None",
 						description: i18n.getProperty("detail.infoTab.stage.status.P")
 					},
+					O: {
+						color: "rgb(152,152,152)",
+						state: "None",
+						description: i18n.getProperty("detail.infoTab.stage.status.P")
+					},
 					A: {
 						color: null,
 						state: "Success",
@@ -65,12 +70,50 @@ sap.ui.define([
 			};
 			this.MODELS = {
 				"routesFiltersModel": Models.createRoutesFiltersModel(),
+				"requestsModel": Models.createRoutesFiltersModel(),
 				"technicalModel": Models.createEmptyJSONModel(),
 				"orderModel": Models.createEmptyJSONModel(),
 				"carModel": Models.createEmptyJSONModel()
 			};
-			this.MODELS.technicalModel.setProperty("/isOrderOpened", false);
 			this.MODELS.technicalModel.setProperty("/lineWidth", 6);
+			this.MODELS.technicalModel.setProperty("/legendVisible", false);
+			this.MODELS.technicalModel.setProperty("/selectedTab", "stages");
+			this.MODELS.technicalModel.setProperty("/legend", [
+				{
+					color: "rgb(240,255,0)",
+					state: "Warning",
+					description: i18n.getProperty("detail.infoTab.stage.status.I")
+				},
+				{
+					color: "rgb(0,255,0)",
+					state: "Success",
+					description: i18n.getProperty("detail.infoTab.stage.status.D")
+				},
+				{
+					color: "rgb(152,152,152)",
+					state: "None",
+					description: i18n.getProperty("detail.infoTab.stage.status.P")
+				},{
+					color: "rgb(0,255,215)",
+					state: null,
+					description: i18n.getProperty("detail.infoTab.stage.status.GPS")
+				},
+				{
+					color: "rgb(0,128,255)",
+					state: null,
+					description: i18n.getProperty("detail.infoTab.stage.status.SNOWPLOW")
+				},
+				{
+					color: "rgb(255,0,255)",
+					state: null,
+					description: i18n.getProperty("detail.infoTab.stage.status.SALT_SPREADER")
+				},
+				{
+					color: "rgb(255,128,0)",
+					state: null,
+					description: i18n.getProperty("detail.infoTab.stage.status.BRUSH")
+				}
+			])
 			this.MODELS.orderModel.setData({
 				routes: [{
 					isStage: true,
@@ -98,24 +141,24 @@ sap.ui.define([
 		onAfterRendering: function () {
 			BaseController.prototype.onAfterRendering.apply(this, arguments);
 		},
-		
-		onExit : function(){
+
+		onExit: function () {
 			this._devicesLoadingTask.stop();
+			this._devicesStatisticsLoadingTask.stop();
 			this._stagesLoadingTask.stop();
 			this._carsLoadingTask.stop();
+			this._requestsLoadingTask.stop();
 		},
-		
+
 		onClickRoute: function (evt) {
 
 		},
 
 		onLegendItemClick: function (evt) {
-			var oMap = this.getMapControl();
 			var context = evt.getSource().getBindingContext("orderModel");
 			var data = context.getProperty();
-			var pos = null;
 			var colorPath = context.getPath() + "/state/color";
-			var color = data.color;
+			var color = data.state.color;
 			var colorHighlighter = function (counter, enableHighlighting) {
 				if (counter < 6) {
 					setTimeout(function () {
@@ -128,12 +171,8 @@ sap.ui.define([
 						colorHighlighter(counter, !enableHighlighting);
 					}, 600);
 				}
-			}
+			};
 			colorHighlighter(0, true);
-			//	oMap.setCenterPosition(pos);
-			if (oMap.getZoomlevel() < 13) {
-				oMap.setZoomlevel(13);
-			}
 		},
 
 		onFiltersChanged: function (evt) {
@@ -166,7 +205,6 @@ sap.ui.define([
 
 		onDevicesFiltersChanged: function (evt) {
 			var oMap = this.getMapControl();
-			var oMapLegend = this.getMapLegend();
 			var binding = oMap.getAggregation("vos")[1].getBinding("items");
 			var key = evt.getParameters().selectedItem.getKey();
 			var filters = [];
@@ -193,8 +231,8 @@ sap.ui.define([
 
 		onZoomChanged: function (evt) {
 			BaseController.prototype.onZoomChanged.apply(this, arguments);
-			var zoomLevel = parseInt(evt.getParameter("zoomLevel"));
-			zoomLevel = zoomLevel > 15 ? zoomLevel : zoomLevel - 6
+			var zoomLevel = parseInt(evt.getParameter("zoomLevel"), 10);
+			zoomLevel = zoomLevel > 15 ? zoomLevel : zoomLevel - 6;
 			this.MODELS.technicalModel.setProperty("/lineWidth", zoomLevel);
 		},
 
@@ -222,9 +260,12 @@ sap.ui.define([
 					items: {
 						path: "orderModel>spots",
 						template: new sap.ui.vbm.Spot({
+							tooltip: "{= ${orderModel>carName} + ' ' + ${orderModel>carModel} + ' ' + ${orderModel>VIN}}",
+							text: "{orderModel>index}",
 							position: "{orderModel>coordinates}",
 							state: "Error",
-							color: "{orderModel>state/color}"
+							contentColor: "{orderModel>state/color}",
+							type: "{orderModel>state/state}"
 						})
 					}
 				});
@@ -232,20 +273,22 @@ sap.ui.define([
 			return routes;
 		},
 
+		// legendFactoryFunction: function (sId, oContext) {
+		// 	return new sap.ui.vbm.LegendItem(sId, {
+		// 		text: "{= ${i18n>stage.title} + ' ' + ${orderModel>index} + ': ' + ${orderModel>geoFromName} + '-' + ${orderModel>geoToName} }",
+		// 		color: "{orderModel>state/color}",
+		// 		click: [this.onLegendItemClick, this]
+		// 	});
+		// },
 		legendFactoryFunction: function (sId, oContext) {
-			var currentObject = oContext.getProperty();
-			var item = null;
-			var that = this;
-			item = new sap.ui.vbm.LegendItem(sId, {
-				text: "{= 'Stage ' + ${orderModel>index} + ': ' + ${orderModel>geoFromName} + '-' + ${orderModel>geoToName} }",
-				color: "{orderModel>state/color}",
-				click: [this.onLegendItemClick, this]
+			return new sap.ui.vbm.LegendItem(sId, {
+				text: "{technicalModel>description}",
+				color: "{technicalModel>color}"
 			});
-			return item;
 		},
 
 		onChartClick: function (evt) {
-			this.MODELS.routesFiltersModel.setProperty("/selectedDeviceKey", evt.getSource().data("name"))
+			this.MODELS.routesFiltersModel.setProperty("/selectedDeviceKey", evt.getSource().data("name"));
 			this.onDevicesFiltersChanged({
 				getParameters: function () {
 					return {
@@ -279,59 +322,117 @@ sap.ui.define([
 				this._devicesLoadingTask.stop();
 				delete this._devicesLoadingTask;
 			}
+			if (that._requestsLoadingTask) {
+				that._requestsLoadingTask.stop();
+				delete that._requestsLoadingTask;
+			}
+			if (that._devicesStatisticsLoadingTask) {
+				that._devicesStatisticsLoadingTask.stop();
+				delete that._devicesStatisticsLoadingTask;
+			}
+
+			that.MODELS.orderModel.setProperty("/statistics", {});
 			this._stagesLoadingTask = this.createPeriodicalyTask(function () {
 				$.ajax({
 					type: "GET",
 					url: "/services/getStagesByOrder?orderId=" + orderId,
-					async: false,
+					// ifModified : true,
 					success: function (data, textStatus, jqXHR) {
-						data.results.forEach(function (stage, index) {
-							stage.index = index + 1;
-							stage.state = that.STATUSES_MAPPING()[stage.status];
-						});
-						that.MODELS.orderModel.setProperty("/routes/0/routes", data.results);
+						// if(jqXHR.status === 200){
+						if (data && data.results) {
+							data.results.forEach(function (stage, index) {
+								stage.index = index + 1;
+								stage.state = that.STATUSES_MAPPING()[stage.status];
+							});
+							that.MODELS.orderModel.setProperty("/routes/0/routes", data.results);
+						}
+						// }
 					},
 					error: function (data, textStatus, jqXHR) {
 						console.log("error to post " + textStatus, jqXHR, data);
 					}
 				});
-			}, 10000);
+			}, 15000);
 
 			this._devicesLoadingTask = this.createPeriodicalyTask(function () {
 				$.ajax({
 					type: "GET",
 					url: "/services/getDevicesStatisticsByOrder?orderId=" + orderId,
-					async: false,
+					// ifModified : true,
 					success: function (data, textStatus, jqXHR) {
-						data.results.forEach(function (stage, index) {
-							stage.index = index + 1;
-							stage.state = that.STATUSES_MAPPING()[stage.status];
-						});
-						that.MODELS.orderModel.setProperty("/routes/1/routes", data.results);
-						that.MODELS.orderModel.setProperty("/routes/2/spots", [{
-							state: that.STATUSES_MAPPING()["I"],
-							coordinates: "27.659810066223145;53.92362976074219;0"
-						}]);
+						// if(jqXHR.status === 200){
+						if (data && data.results) {
+							data.results.forEach(function (stage, index) {
+								stage.index = index + 1;
+								stage.state = that.STATUSES_MAPPING()[stage.status];
+							});
+							that.MODELS.orderModel.setProperty("/routes/1/routes", data.results);
+						}
+						// }
 					},
 					error: function (data, textStatus, jqXHR) {
 						console.log("error to post " + textStatus, jqXHR, data);
-						that.MODELS.orderModel.setProperty("/routes/1/routes", []);
-						that.MODELS.orderModel.setProperty("/routes/2/spots", []);
 					}
 				});
-			}, 15000);
+			}, 13000);
+
+			this._devicesStatisticsLoadingTask = this.createPeriodicalyTask(function () {
+				$.ajax({
+					type: "GET",
+					url: "/services/getDevicesStatisticsByOrder?withStatistics=true&orderId=" + orderId,
+					success: function (data, textStatus, jqXHR) {
+						if (data && data.statistics) {
+							that.MODELS.orderModel.setProperty("/statistics", data.statistics);
+						}
+					},
+					error: function (data, textStatus, jqXHR) {
+						console.log("error to post " + textStatus, jqXHR, data);
+					}
+				});
+			}, 13000);
 
 			this._carsLoadingTask = this.createPeriodicalyTask(function () {
 				$.ajax({
 					type: "GET",
-					url: "/services/getCarsByOrder?orderId=" + orderId,
-					async: false,
+					url: "/services/getCarsCurrentPositions?orderId=" + orderId,
+					// ifModified: true,
 					success: function (data, textStatus, jqXHR) {
-						data.results.forEach(function (car, index) {
-							car.index = index + 1;
-							car.state = that.STATUSES_MAPPING()[car.status];
-						});
-						that.MODELS.carModel.setData(data);
+						// if(jqXHR.status === 200){
+						if (data && data.results) {
+							data.results.forEach(function (car, index) {
+								car.index = index + 1;
+								car.coordinates = car.location;
+								car.state = that.STATUSES_MAPPING()[car.status];
+								delete car.location;
+							});
+							that.MODELS.carModel.setData(data);
+							that.MODELS.orderModel.setProperty("/routes/2/spots", data.results);
+						}
+						// }
+					},
+					error: function (data, textStatus, jqXHR) {
+						console.log("error to post " + textStatus, jqXHR, data);
+					}
+				});
+			}, 5000);
+
+			this._requestsLoadingTask = this.createPeriodicalyTask(function () {
+				$.ajax({
+					type: "GET",
+					url: "/services/getCustomersRequests?orderId=" + orderId,
+					// ifModified : true,
+					success: function (data, textStatus, jqXHR) {
+						// if(jqXHR.status === 200){
+						if (data && data.result) {
+							data.result.forEach(function (request, index) {
+								request.index = index + 1;
+								request.coordinates = request.location;
+								request.state = that.STATUSES_MAPPING()[request.status];
+								delete request.location;
+							});
+							that.MODELS.requestsModel.setData(data);
+						}
+						// }
 					},
 					error: function (data, textStatus, jqXHR) {
 						console.log("error to post " + textStatus, jqXHR, data);
@@ -341,6 +442,8 @@ sap.ui.define([
 			that._carsLoadingTask.start();
 			that._stagesLoadingTask.start();
 			that._devicesLoadingTask.start();
+			that._devicesStatisticsLoadingTask.start();
+			that._requestsLoadingTask.start();
 			var sObjectPath = "/results/" + index;
 			this._bindView(sObjectPath);
 		},
@@ -385,7 +488,37 @@ sap.ui.define([
 				var bReplace = true; //Otherwise  we go backward with a forward history
 				this.getRouter().navTo("master", {}, bReplace);
 			}
-		}
+		},
+
+		onCarTableCellClick: function (evt) {
+			var carId = evt.getParameter("listItem").getBindingContext("carModel").getProperty("carId");
+			var fgetService = sap.ushell && sap.ushell.Container && sap.ushell.Container.getService;
+			var oCrossAppNavigator = fgetService && fgetService("CrossApplicationNavigation");
+			oCrossAppNavigator.toExternal({
+				target: {
+					semanticObject: "uitechnics",
+					action: "Display"
+				},
+				params: {
+					"carId": carId
+				}
+			});
+		},
+
+		onRequestTableCellClick: function (evt) {
+			var requestId = evt.getParameter("listItem").getBindingContext("requestsModel").getProperty("id");
+			var fgetService = sap.ushell && sap.ushell.Container && sap.ushell.Container.getService;
+			var oCrossAppNavigator = fgetService && fgetService("CrossApplicationNavigation");
+			oCrossAppNavigator.toExternal({
+				target: {
+					semanticObject: "uirequests",
+					action: "Display"
+				},
+				params: {
+					"requestId": requestId
+				}
+			});
+		},
 	});
 
 });

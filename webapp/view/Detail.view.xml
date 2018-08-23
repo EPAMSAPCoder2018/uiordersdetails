@@ -10,35 +10,36 @@
 						state="{state/state}"/>
 				</statuses>
 				<ObjectAttribute text="{state/description}" title="{i18n>order.status}"/>
+				<ObjectAttribute text="{details}" title="{i18n>order.details}"/>
 				<ObjectAttribute text="{distance} м" title="{i18n>order.distance}"/>
 			</ObjectHeader>
-			<IconTabBar class="sapUiResponsiveContentPadding">
+			<IconTabBar class="sapUiResponsiveContentPadding" selectedKey="{technicalModel>/selectedTab}">
 				<items>
-					<IconTabFilter icon="sap-icon://message-information">
+					<IconTabFilter icon="sap-icon://message-information" key="stages">
 						<content>
 							<Panel class="noPadding" headerText="{i18n>detail.infoTab.processed}" expandable="true" expanded="true">
 								<Table>
 									<columns>
-										<Column demandPopin="true" minScreenWidth="Tablet">
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="В целом"/>
 										</Column>
-										<Column demandPopin="true" minScreenWidth="Tablet">
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="Снегоочистителем"/>
 										</Column>
-										<Column demandPopin="true" minScreenWidth="Tablet">
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="Щетками"/>
 										</Column>
-										<Column demandPopin="true" minScreenWidth="Tablet">
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="Солью"/>
 										</Column>
 									</columns>
 									<items>
 										<ColumnListItem>
 											<cells>
-												<mc:RadialMicroChart size="L" percentage="64" custom:name="All" valueColor="rgb(0,255,0)" press="onChartClick"/>
-												<mc:RadialMicroChart size="L" percentage="41" custom:name="SNOWPLOW" valueColor="rgb(0,128,255)" press="onChartClick"/>
-												<mc:RadialMicroChart size="L" percentage="31" custom:name="BRUSH" valueColor="rgb(255,128,0)" press="onChartClick"/>
-												<mc:RadialMicroChart size="L" percentage="34" custom:name="SALT_SPREADER" valueColor="rgb(255,0,255)" press="onChartClick"/>
+												<mc:RadialMicroChart size="L" percentage="{= Math.round(${orderModel>/statistics/GPS}*100/${distance}) || 0}" custom:name="All" valueColor="rgb(0,255,0)" press="onChartClick"/>
+												<mc:RadialMicroChart size="L" percentage="{= Math.round(${orderModel>/statistics/SNOWPLOW}*100/${distance}) || 0 }" custom:name="SNOWPLOW" valueColor="rgb(0,128,255)" press="onChartClick"/>
+												<mc:RadialMicroChart size="L" percentage="{= Math.round(${orderModel>/statistics/BRUSH}*100/${distance}) || 0 }" custom:name="BRUSH" valueColor="rgb(255,128,0)" press="onChartClick"/>
+												<mc:RadialMicroChart size="L" percentage="{= Math.round(${orderModel>/statistics/SALT_SPREADER}*100/${distance}) || 0 }" custom:name="SALT_SPREADER" valueColor="rgb(255,0,255)" press="onChartClick"/>
 											</cells>
 										</ColumnListItem>
 									</items>
@@ -53,13 +54,13 @@
 										<Column>
 											<Text text="{i18n>detail.infoTab.stage.status}"/>
 										</Column>
-										<Column width="5em">
+										<Column width="5em" demandPopin="true" minScreenWidth="Desktop">
 											<Text text="{i18n>detail.infoTab.stage.distance}"/>
 										</Column>
-										<Column>
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="{i18n>detail.infoTab.stage.geoFromName}"/>
 										</Column>
-										<Column>
+										<Column demandPopin="true" minScreenWidth="Desktop">
 											<Text text="{i18n>detail.infoTab.stage.geoToName}"/>
 										</Column>
 									</columns>
@@ -79,7 +80,7 @@
 							</Panel>
 						</content>
 					</IconTabFilter>
-					<IconTabFilter icon="sap-icon://map-2" width="100%" height="500px">
+					<IconTabFilter icon="sap-icon://map-2"  key="map">
 						<content>
 							<OverflowToolbar>
 								<ToolbarSpacer/>
@@ -93,17 +94,19 @@
 									<core:Item key="{routesFiltersModel>key}" text="{routesFiltersModel>name}"/>
 								</ComboBox>
 							</OverflowToolbar>
-							<vbm:GeoMap id="vbi" width="100%" height="450px" initialZoom="12" initialPosition="27.554899;53.904651"
+							<vbm:GeoMap id="vbi" width="100%" height="450px" initialZoom="12" initialPosition="71.428028;51.134140"
+								legendVisible="{technicalModel>/legendVisible}"
 								vos="{path:'orderModel>/routes', factory:'.vosFactoryFunction'}" zoomChanged="onZoomChanged">
 								<vbm:legend>
-									<vbm:Legend caption="Заказы" items="{ path: 'orderModel>/routes/0/routes', factory: '.legendFactoryFunction'}"></vbm:Legend>
+									<!--<vbm:Legend caption="Заказы" items="{ path: 'orderModel>/routes/0/routes', factory: '.legendFactoryFunction'}"></vbm:Legend>-->
+									<vbm:Legend caption="{i18n>Legend}" items="{ path: 'technicalModel>/legend', factory: '.legendFactoryFunction'}"></vbm:Legend>
 								</vbm:legend>
 							</vbm:GeoMap>
 						</content>
 					</IconTabFilter>
-					<IconTabFilter icon="sap-icon://car-rental" width="100%" height="100%">
+					<IconTabFilter icon="sap-icon://car-rental"  key="cars">
 						<content>
-							<Table items="{carModel>/results}" noDataText="{i18n>tableNoDataText}">
+							<Table items="{carModel>/results}" noDataText="{i18n>tableNoDataText}" mode="SingleSelectMaster" select="onCarTableCellClick" >
 								<columns>
 									<Column width="10em">
 										<Text text="{i18n>detail.carsTab.car.id}"/>
@@ -111,31 +114,31 @@
 									<Column>
 										<Text text="{i18n>detail.carsTab.car.status}"/>
 									</Column>
-									<Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
 										<Text text="{i18n>detail.carsTab.car.name}"/>
 									</Column>
-									<Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
 										<Text text="{i18n>detail.carsTab.car.model}"/>
 									</Column>
-									<Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
 										<Text text="{i18n>detail.carsTab.car.licPlate}"/>
 									</Column>
-									<Column width="10em">
+									<Column width="10em"  demandPopin="true" minScreenWidth="Desktop">
 										<Text text="{i18n>detail.carsTab.car.vin}"/>
 									</Column>
-									<Column>
+									<Column  demandPopin="true" minScreenWidth="Desktop">
 										<Text text="{i18n>detail.carsTab.car.avgSpeed}"/>
 									</Column>
 								</columns>
 								<items>
-									<ColumnListItem>
+									<ColumnListItem press="onCarTableCellClick">
 										<cells>
-											<Text text="{carModel>id}"/>
+											<Text text="{carModel>carId}"/>
 											<ProgressIndicator displayOnly="true" percentValue="100" 
 												displayValue="{carModel>state/description}"
 												state="{carModel>state/state}"/>
-											<Text text="{carModel>name}"/>
-											<Text text="{carModel>model}"/>
+											<Text text="{carModel>carName}"/>
+											<Text text="{carModel>carModel}"/>
 											<Text text="{carModel>licPlate}"/>
 											<Text text="{carModel>VIN}"/>
 											<Text text="{carModel>avgSpeed}"/>
@@ -145,14 +148,58 @@
 							</Table>
 						</content>
 					</IconTabFilter>
-					<IconTabFilter icon="sap-icon://travel-request" width="100%" height="100%">
-						<content></content>
+					<IconTabFilter icon="sap-icon://travel-request"  key="requests">
+						<content>
+							<Table items="{requestsModel>/result}" noDataText="{i18n>tableNoDataText}" mode="SingleSelectMaster" select="onRequestTableCellClick" >
+								<columns>
+									<Column width="4em">
+										<Text text="{i18n>detail.requestsTab.request.id}"/>
+									</Column>
+									<Column width="7em">
+										<Text text="{i18n>detail.requestsTab.request.status}"/>
+									</Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
+										<Text text="{i18n>detail.requestsTab.request.requester}"/>
+									</Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
+										<Text text="{i18n>detail.requestsTab.request.phone}"/>
+									</Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
+										<Text text="{i18n>detail.requestsTab.request.address}"/>
+									</Column>
+									<Column width="10em" demandPopin="true" minScreenWidth="Desktop">
+										<Text text="{i18n>detail.requestsTab.request.problem}"/>
+									</Column>
+									<Column demandPopin="true" minScreenWidth="Desktop">
+										<Text wrapping="false" text="{i18n>detail.requestsTab.request.description}"/>
+									</Column>
+								</columns>
+								<items>
+									<ColumnListItem>
+										<cells>
+											<Text text="{requestsModel>id}"/>
+											<ProgressIndicator displayOnly="true" percentValue="100" 
+												displayValue="{requestsModel>state/description}"
+												state="{requestsModel>state/state}"/>
+											<Text text="{requestsModel>custName} {requestsModel>custSurName}"/>
+											<Text text="{requestsModel>phone}"/>
+											<Text text="{requestsModel>address}"/>
+											<Text text="{requestsModel>problem}"/>
+											<Text text="{requestsModel>description}"/>
+										</cells>
+									</ColumnListItem>
+								</items>
+							</Table>
+						</content>
 					</IconTabFilter>
-					<IconTabFilter icon="sap-icon://video" width="100%" height="100%">
+					<IconTabFilter icon="sap-icon://video"  key="video">
 						<content></content>
 					</IconTabFilter>
 				</items>
 			</IconTabBar>
 		</semantic:content>
+		<semantic:customFooterContent>
+			<ToggleButton text="{i18n>Legend}" visible="{= ${technicalModel>/selectedTab} === 'map'}" pressed="{technicalModel>/legendVisible}"/>
+		</semantic:customFooterContent>
 	</semantic:DetailPage>
 </mvc:View>
